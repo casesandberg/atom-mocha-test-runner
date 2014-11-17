@@ -10,7 +10,10 @@ class ResultView extends View
         @div outlet: 'heading', class: 'heading', =>
           @div class: 'pull-right', =>
             @span outlet: 'closeButton', class: 'close-icon'
-          @span 'Mocha test results'
+          @span outlet: 'headingText', =>
+            @span class: 'heading-failing'
+            # @span class: 'heading-passing', 'Mocha test results'
+            @span class: 'heading-failed-tests'
         @div class: 'panel-body', =>
           @pre outlet: 'results', class: 'results'
 
@@ -39,12 +42,32 @@ class ResultView extends View
     @height @resizeData.height + @resizeData.pageY - pageY
 
   reset: ->
+    @headingText.find('.heading-failed-tests').html('')
     @heading.removeClass 'alert-success alert-danger'
     @results.empty()
 
   addLine: (line) ->
     if line isnt '\n'
       @results.append line
+
+      passing = line.match /[0-9]+\s*passing/g
+      failing = line.match /[0-9]+\s*failing/g
+
+      failingTests = line.match /(<span style="color:#ff7e76">  [0-9]\) ).*(?=<\/span>)/
+
+      if failing
+        @headingText.find('.heading-failing').html failing
+
+    #   if passing
+    #     @headingText.find('.heading-passing').html passing
+
+      if failingTests
+        testName = failingTests[0].replace /(<span style="color:#ff7e76">  [0-9]\) )/, ''
+
+        if @headingText.find('.heading-failed-tests').html() == ''
+          @headingText.find('.heading-failed-tests').html ' -- ' + testName
+        else
+          @headingText.find('.heading-failed-tests').html @headingText.find('.heading-failed-tests').html() + ', ' + testName
 
   success: ->
     @heading.addClass 'alert-success'
